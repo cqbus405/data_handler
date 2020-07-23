@@ -1,10 +1,11 @@
 const fs = require('fs')
 const moment = require('moment')
+const async = require('async')
 const TX_ORG = require('../model/tx_org.model')
 const TOTAL = require('../model/total.model')
 const TOTAL_SPLIT = require('../model/total_split.model')
 
-exports.handleOrgDataInterval = (fileName, callback) => {
+exports.handleOrgData = (fileName, callback) => {
 	TX_ORG.get(fileName, (error, records) => {
 		if (error) return callback(error)
 
@@ -100,7 +101,7 @@ exports.handleOrgDataInterval = (fileName, callback) => {
 	})
 }
 
-exports.splitRecordsInterval = callback => {
+exports.splitRecords = callback => {
 	TOTAL.get((error, records) => {
 		if (error) return callback(error, null)
 
@@ -169,49 +170,136 @@ exports.splitRecordsInterval = callback => {
 	})
 }
 
-exports.getSplitedRecordsInterval = (start, end, callback) => {
+exports.calcParkingDuration = (start, end, callback) => {
 	TOTAL_SPLIT.get(start, end, (error, records) => {
 		if (error) return callback(error, null)
 
 		let jsonRecords = JSON.parse(JSON.stringify(records))
 
+		let rdsWithPkgDurt = calcParkingDurationInterval(start, end, jsonRecords)
+		// console.log(rdsWithPkgDurt)
+
 		let output = 'plateno,owner,entertime,exittime,duration,parking\n'
 
-		jsonRecords.forEach(record => {
-
-			let enter = record.entertime
-			let exit = record.exittime
-
-			let currentDate = moment(enter).format('YYYY-MM-DD')
-			let startTime = moment(start).format('HH:mm:ss')
-			let endTime = moment(end).format('HH:mm:ss')
-
-			let enterMoment = moment(enter)
-			let exitMoment = moment(exit)
-			let startMoment = moment(currentDate + ' ' + startTime)
-			let endMoment = moment(currentDate + ' ' + endTime)
-
-			let parkingDuration = 0
-
-			if (exitMoment.isSameOrBefore(startMoment) || enterMoment.isSameOrAfter(endMoment)) {
-				parkingDuration = 0
-			} else if (enterMoment.isSameOrBefore(startMoment) && exitMoment.isSameOrAfter(endMoment)) {
-				parkingDuration = endMoment.diff(startMoment, 'minutes')
-			} else if (enterMoment.isSameOrBefore(startMoment) && (startMoment.isSameOrBefore(exitMoment) && endMoment.isSameOrAfter(exitMoment))) {
-				parkingDuration = exitMoment.diff(startMoment, 'minutes')
-			} else if (enterMoment.isSameOrAfter(startMoment) && exitMoment.isSameOrBefore(endMoment)) {
-				parkingDuration = exitMoment.diff(enterMoment, 'minutes')
-			} else {
-				parkingDuration = endMoment.diff(startMoment, 'minutes')
-			}
-
-			output += record.plateno + ',' + record.owner + ',' + record.entertime + ',' + record.exittime + ',' + parkingDuration + ',' + record.parking + '\n'
+		rdsWithPkgDurt.forEach(record => {
+			output += record.plateno + ',' + record.owner + ',' + record.entertime + ',' + record.exittime + ',' + record.parkingduration + ',' + record.parking + '\n'
 		})
-
+		
 		fs.writeFile('d:/github/data_handler/dist/total_duration.csv', output, error => {
 			if (error) return callback(error, null)
 
 			return callback(null, 1)
 		})		
+	})
+}
+
+const calcParkingDurationInterval = (start, end, records) => {
+	records.forEach(record => {
+		let enter = record.entertime
+		let exit = record.exittime
+
+		let currentDate = moment(enter).format('YYYY-MM-DD')
+		let startTime = moment(start).format('HH:mm:ss')
+		let endTime = moment(end).format('HH:mm:ss')
+
+		let enterMoment = moment(enter)
+		let exitMoment = moment(exit)
+		let startMoment = moment(currentDate + ' ' + startTime)
+		let endMoment = moment(currentDate + ' ' + endTime)
+
+		let parkingDuration = 0
+
+		if (exitMoment.isSameOrBefore(startMoment) || enterMoment.isSameOrAfter(endMoment)) {
+			parkingDuration = 0
+		} else if (enterMoment.isSameOrBefore(startMoment) && exitMoment.isSameOrAfter(endMoment)) {
+			parkingDuration = endMoment.diff(startMoment, 'minutes')
+		} else if (enterMoment.isSameOrBefore(startMoment) && (startMoment.isSameOrBefore(exitMoment) && endMoment.isSameOrAfter(exitMoment))) {
+			parkingDuration = exitMoment.diff(startMoment, 'minutes')
+		} else if (enterMoment.isSameOrAfter(startMoment) && exitMoment.isSameOrBefore(endMoment)) {
+			parkingDuration = exitMoment.diff(enterMoment, 'minutes')
+		} else {
+			parkingDuration = endMoment.diff(startMoment, 'minutes')
+		}
+
+		record.parkingduration = parkingDuration
+	})
+
+	return [...records]
+}
+
+exports.getFreeParkingDuration = (start, end, callback) => {
+	async.waterfall([
+		callback => {
+			TOTAL_SPLIT.get(start, end, (error, records) => {
+				if (error) return callback(error)
+
+				let splitedRecords = JSON.parse(JSON.stringify(records))
+
+				return callback(null, splitedRecords)
+			})
+		},
+		(splitedRecords, callback) => {
+			let rdsWithPkgDurt = calcParkingDurationInterval(start, end, splitedRecords)
+			callback(null, rdsWithPkgDurt)
+		},
+		(rdsWithPkgDurt, callback) => {
+			let plateNoParkingRecordsMap = {}
+
+			rdsWithPkgDurt.forEach(record => {
+				let plateNo = record.plateno
+				let enterDate = moment(record.entertime).format('YYYY-MM-DD')
+				let mapKey = plateNo + '_' + enterDate
+
+				let parkingRecords = plateNoParkingRecordsMap[mapKey]
+
+				if (parkingRecords === undefined) {
+					plateNoParkingRecordsMap[mapKey] = []
+					plateNoParkingRecordsMap[mapKey].push(record)
+				} else {
+					parkingRecords.push(record)
+				}
+			})
+
+			return callback(null, plateNoParkingRecordsMap)
+		}, 
+		(plateNoParkingRecordsMap, callback) => {
+			let combinedRecords = []
+
+			const totalDuration = moment(end).diff(moment(start), 'minutes')
+
+			for (let key in plateNoParkingRecordsMap) {
+				let records = plateNoParkingRecordsMap[key]
+
+				let recordsLength = records.length
+
+				if (recordsLength === 1) {
+					combinedRecords.push(Object.assign({}, records[0], {
+						available: totalDuration - records[0].duration
+					}))
+
+					continue
+				}
+
+				let theSumOfDuration = 0
+
+				records.forEach(record => {
+					let duration = record.duration
+					theSumOfDuration += duration
+					if (duration === totalDuration) {
+						combinedRecords.push(Object.assign({}, record, {
+							available: 0
+						}))
+						break //需要修改
+					}
+				})
+
+				combinedRecords.push(Object.assign({}, records[0], {
+					available: totalDuration - theSumOfDuration
+				}))
+			}
+		}
+	], (error, result) => {
+		if (error) return callback(error)
+		return callback(null, result)
 	})
 }

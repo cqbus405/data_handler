@@ -10,7 +10,7 @@ exports.handleOrgData = (req, res) => {
 		})
 	}
 
-	recordService.handleOrgDataInterval(fileBaseName, (error, result) => {
+	recordService.handleOrgData(fileBaseName, (error, result) => {
 		if (error) {
 			return res.json({
 				errcode: 1,
@@ -26,7 +26,7 @@ exports.handleOrgData = (req, res) => {
 }
 
 exports.splitRecords = (req, res) => {
-	recordService.splitRecordsInterval((error, result) => {
+	recordService.splitRecords((error, result) => {
 		if (error) {
 			return res.json({
 				errcode: 1,
@@ -41,10 +41,10 @@ exports.splitRecords = (req, res) => {
 	})
 }
 
-exports.calParkingDuration = (req, res) => {
+exports.calcParkingDuration = (req, res) => {
 	let start = req.query.start
 	let end = req.query.end
-console.log(start, end)
+
 	if (!start || !end) {
 		return res.json({
 			errcode: 2,
@@ -52,7 +52,7 @@ console.log(start, end)
 		})
 	}
 
-	recordService.getSplitedRecordsInterval(start, end, (error, result) => {
+	recordService.calcParkingDuration(start, end, (error, result) => {
 		if (error) {
 			return res.json({
 				errcode: 1,
@@ -65,4 +65,31 @@ console.log(start, end)
 			errmsg: 'ok'
 		})
 	})
+}
+
+exports.freeParkingDuration = (req, res) => {
+	let start = req.query.start
+	let end = req.query.end
+
+	if (!start || !end) {
+		return res.json({
+			errcode: 2,
+			errmsg: '参数缺失'
+		})
+	}
+
+	recordService.getFreeParkingDuration(start, end, (error, rdsWithFreePkgDurt) => {
+		if (error) return res.json({
+			errcode: 1,
+			errmsg: error
+		})
+
+		// console.log(rdsWithFreePkgDurt)
+
+		return res.json({
+			errcode: 0,
+			errmsg: 'ok',
+			data: rdsWithFreePkgDurt
+		})
+	}) 
 }

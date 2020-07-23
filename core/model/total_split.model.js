@@ -19,7 +19,8 @@ exports.get = (start, end, callback) => {
 						+ "	entertime >= '"
 						+ start + "' "
 						+ "AND exittime <= '"
-						+ end + "';"
+						// + end + "';"
+						+ end + "' LIMIT 100;"
 
 	connection.query(SQL, (error, results, fields) => {
 		if (error) return callback(error, null)
