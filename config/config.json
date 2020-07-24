@@ -3,6 +3,7 @@
 		"host": "localhost",
 		"user": "q",
 		"password": "cqgogogo",
-		"database": "parking"
+		"database": "parking",
+		"multipleStatements": true
 	}
 }

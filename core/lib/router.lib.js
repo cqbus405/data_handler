@@ -5,6 +5,7 @@ const setRouter = app => {
 	app.get('/record/split', controller.record.splitRecords)
 	app.get('/record/duration', controller.record.calcParkingDuration)
 	app.get('/record/freeParkingDuration', controller.record.freeParkingDuration)
+	app.get('/record/avlPct', controller.record.availablePercentage)
 }
 
 module.exports = setRouter

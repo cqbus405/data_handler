@@ -1,4 +1,4 @@
-const connection = require('../lib/mysql.lib')
+const mysql = require('../lib/mysql.lib')
 
 exports.get = callback => {
 	const SQL = "SELECT "
@@ -11,7 +11,7 @@ exports.get = callback => {
 						+ "	plateno, "
 						+ "	entertime;"
 
-	connection.query(SQL, (error, results, fields) => {
+	mysql.connection.query(SQL, (error, results, fields) => {
 		if (error) return callback(error, null)
 
 		return callback(null, results)

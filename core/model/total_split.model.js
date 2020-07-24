@@ -1,4 +1,4 @@
-const connection = require('../lib/mysql.lib')
+const mysql = require('../lib/mysql.lib')
 
 exports.get = (start, end, callback) => {
 	const SQL = "SELECT "
@@ -20,11 +20,29 @@ exports.get = (start, end, callback) => {
 						+ start + "' "
 						+ "AND exittime <= '"
 						// + end + "';"
-						+ end + "' LIMIT 100;"
+						+ end + "' LIMIT 1000;"
 
-	connection.query(SQL, (error, results, fields) => {
+	mysql.connection.query(SQL, (error, results, fields) => {
 		if (error) return callback(error, null)
 
 		return callback(null, results)
 	})
+}
+
+exports.getByStartEndDateParkingAsync = async (start, end, date, parking) => {
+	const SQL = "SELECT "
+						+ "	count(DISTINCT plateno) AS num "
+						+ "FROM "
+						+ "	total_split "
+						+ "WHERE "
+						+ "	parking = '" + parking + "' "
+						+ "AND DATE(entertime) = '" + date + "' "
+						+ "AND ( "
+						+ "	TIME(entertime) <= '" + start + "' "
+						+ "	AND TIME(exittime) >= '" + end + "' "
+						+ ");"
+// console.log(SQL)
+	var result = await mysql.querySync(SQL)
+	// console.log(result)
+	return JSON.parse(JSON.stringify(result))
 }

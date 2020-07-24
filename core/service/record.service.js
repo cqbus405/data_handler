@@ -177,7 +177,6 @@ exports.calcParkingDuration = (start, end, callback) => {
 		let jsonRecords = JSON.parse(JSON.stringify(records))
 
 		let rdsWithPkgDurt = calcParkingDurationInterval(start, end, jsonRecords)
-		// console.log(rdsWithPkgDurt)
 
 		let output = 'plateno,owner,entertime,exittime,duration,parking\n'
 
@@ -265,7 +264,11 @@ exports.getFreeParkingDuration = (start, end, callback) => {
 		(plateNoParkingRecordsMap, callback) => {
 			let combinedRecords = []
 
-			const totalDuration = moment(end).diff(moment(start), 'minutes')
+			const startDate = moment(start).format('YYYY-MM-DD')
+			const endMoment = moment(startDate + ' ' + moment(end).format('HH:mm:ss'))
+			const startMoment = moment(start)
+
+			const totalDuration = endMoment.diff(startMoment, 'minutes')
 
 			for (let key in plateNoParkingRecordsMap) {
 				let records = plateNoParkingRecordsMap[key]
@@ -274,7 +277,8 @@ exports.getFreeParkingDuration = (start, end, callback) => {
 
 				if (recordsLength === 1) {
 					combinedRecords.push(Object.assign({}, records[0], {
-						available: totalDuration - records[0].duration
+						available: totalDuration - records[0].parkingduration,
+						percentage: (((totalDuration - records[0].parkingduration) / totalDuration) * 100).toFixed(2) + '%'
 					}))
 
 					continue
@@ -282,24 +286,63 @@ exports.getFreeParkingDuration = (start, end, callback) => {
 
 				let theSumOfDuration = 0
 
-				records.forEach(record => {
-					let duration = record.duration
-					theSumOfDuration += duration
+				for (let i = 0; i < records.length; ++i) {
+					let record = records[i]
+					let duration = record.parkingduration
+					
 					if (duration === totalDuration) {
 						combinedRecords.push(Object.assign({}, record, {
-							available: 0
+							available: 0,
+							percentage: '0%'
 						}))
-						break //需要修改
+						break
 					}
-				})
+
+					theSumOfDuration += duration
+				}
 
 				combinedRecords.push(Object.assign({}, records[0], {
-					available: totalDuration - theSumOfDuration
+					available: totalDuration - theSumOfDuration,
+					percentage: (((totalDuration - theSumOfDuration) / totalDuration) * 100).toFixed(2) + '%'
 				}))
+
+				return callback(null, combinedRecords)
 			}
 		}
 	], (error, result) => {
 		if (error) return callback(error)
 		return callback(null, result)
 	})
+}
+
+exports.getAvailablePercentage = async (start, end, interval, parking, callback) => {
+	const sampleDate = '2019-01-01'
+	
+	const startTime = moment(start).format('HH:mm:ss')	
+	const endTime = moment(end).format('HH:mm:ss')
+
+	const totalDate = moment(end).diff(moment(start), 'd')
+	const totalTime = moment(sampleDate + ' ' + endTime).diff(moment(sampleDate + ' ' + startTime), 'm')
+// console.log(totalDate, totalTime)
+	let counts = []
+	for (let i = 0; i <= totalDate; ++i) {
+		let currentDate = moment(start).add(i, 'd').format('YYYY-MM-DD')
+
+		for (let j = 0; j < totalTime / interval; ++j) {
+			// console.log(totalTime / interval, j)
+			let frontTime = moment(moment(currentDate + ' ' + startTime).add(j * interval, 'm')).format('HH:mm:ss')
+			let nextTime = moment(moment(currentDate + ' ' + startTime).add((j + 1) * interval, 'm')).format('HH:mm:ss')
+
+			if (j === parseInt(totalTime / interval) && totalTime % interval != 0) {
+				nextTime = endTime
+			}
+
+			let num = await TOTAL_SPLIT.getByStartEndDateParkingAsync(frontTime, nextTime, currentDate, parking)
+			counts.push(num[0].num)
+
+			console.log(currentDate, frontTime + '-' + nextTime, num[0].num)
+		}
+	}
+	// console.log(counts)
+	return callback(counts)
 }

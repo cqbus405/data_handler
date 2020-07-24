@@ -1,3 +1,4 @@
+const moment = require('moment')
 const recordService = require('../service/record.service')
 
 exports.handleOrgData = (req, res) => {
@@ -84,12 +85,27 @@ exports.freeParkingDuration = (req, res) => {
 			errmsg: error
 		})
 
-		// console.log(rdsWithFreePkgDurt)
-
 		return res.json({
 			errcode: 0,
 			errmsg: 'ok',
 			data: rdsWithFreePkgDurt
 		})
 	}) 
+}
+
+exports.availablePercentage = async (req, res) => {
+	const start = req.query.start
+	const end = req.query.end
+	const parking = req.query.parking
+	const interval = parseInt(req.query.interval)
+
+	await recordService.getAvailablePercentage(start, end, interval, parking, counts => {
+		return res.json({
+			errmsg: 'ok',
+			data: {
+				arr: counts,
+				num: counts.length
+			}
+		})
+	})
 }
