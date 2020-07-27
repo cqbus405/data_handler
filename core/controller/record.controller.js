@@ -109,3 +109,22 @@ exports.availablePercentage = async (req, res) => {
 		})
 	})
 }
+
+exports.availablePercentageByES = async (req, res) => {
+	const startDate = req.query.startdate
+	const endDate = req.query.enddate
+	const startTime = req.query.starttime
+	const endTime = req.query.endtime
+	const parking = req.query.parking
+
+	let counts = await recordService.getAvailablePercentageByES(startDate, endDate, startTime, endTime, parking, (dates, datas) => {
+		return res.json({
+			errcode: 0,
+			errmsg: 'ok',
+			data: {
+				dates,
+				datas
+			}
+		})
+	})
+}

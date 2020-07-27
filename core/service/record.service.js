@@ -1,9 +1,10 @@
 const fs = require('fs')
 const moment = require('moment')
-const async = require('async')
+// const async = require('async')
 const TX_ORG = require('../model/tx_org.model')
 const TOTAL = require('../model/total.model')
 const TOTAL_SPLIT = require('../model/total_split.model')
+const PARKING_RECORDS = require('../index/parking_records.index')
 
 exports.handleOrgData = (fileName, callback) => {
 	TX_ORG.get(fileName, (error, records) => {
@@ -150,16 +151,19 @@ exports.splitRecords = callback => {
 			}
 		})
 
-		let output = 'plateno,owner,entertime,exittime,parking\n'
+		let output = 'plateno,owner,enterdate,enter,exit,entertime,exittime,parking\n'
 
 		splitedRecords.forEach(record => {
 			let plateNo = record.plateno
 			let owner = record.owner
+			let enterdate = record.enterdate
+			let enter = record.enter
+			let exit = record.exit
 			let enterTime = record.entertime
 			let exitTime = record.exittime
 			let parking = record.parking
 
-			output += plateNo + ',' + owner + ',' + enterTime + ',' + exitTime + ',' + parking + '\n'
+			output += plateNo + ',' + owner + ',' + enterdate + ',' + enter + ',' + exit + ',' + enterTime + ',' + exitTime + ',' + parking + '\n'
 		})
 
 		fs.writeFile('d:/github/data_handler/dist/total_split.csv', output, error => {
@@ -226,94 +230,94 @@ const calcParkingDurationInterval = (start, end, records) => {
 	return [...records]
 }
 
-exports.getFreeParkingDuration = (start, end, callback) => {
-	async.waterfall([
-		callback => {
-			TOTAL_SPLIT.get(start, end, (error, records) => {
-				if (error) return callback(error)
+// exports.getFreeParkingDuration = (start, end, callback) => {
+// 	async.waterfall([
+// 		callback => {
+// 			TOTAL_SPLIT.get(start, end, (error, records) => {
+// 				if (error) return callback(error)
 
-				let splitedRecords = JSON.parse(JSON.stringify(records))
+// 				let splitedRecords = JSON.parse(JSON.stringify(records))
 
-				return callback(null, splitedRecords)
-			})
-		},
-		(splitedRecords, callback) => {
-			let rdsWithPkgDurt = calcParkingDurationInterval(start, end, splitedRecords)
-			callback(null, rdsWithPkgDurt)
-		},
-		(rdsWithPkgDurt, callback) => {
-			let plateNoParkingRecordsMap = {}
+// 				return callback(null, splitedRecords)
+// 			})
+// 		},
+// 		(splitedRecords, callback) => {
+// 			let rdsWithPkgDurt = calcParkingDurationInterval(start, end, splitedRecords)
+// 			callback(null, rdsWithPkgDurt)
+// 		},
+// 		(rdsWithPkgDurt, callback) => {
+// 			let plateNoParkingRecordsMap = {}
 
-			rdsWithPkgDurt.forEach(record => {
-				let plateNo = record.plateno
-				let enterDate = moment(record.entertime).format('YYYY-MM-DD')
-				let mapKey = plateNo + '_' + enterDate
+// 			rdsWithPkgDurt.forEach(record => {
+// 				let plateNo = record.plateno
+// 				let enterDate = moment(record.entertime).format('YYYY-MM-DD')
+// 				let mapKey = plateNo + '_' + enterDate
 
-				let parkingRecords = plateNoParkingRecordsMap[mapKey]
+// 				let parkingRecords = plateNoParkingRecordsMap[mapKey]
 
-				if (parkingRecords === undefined) {
-					plateNoParkingRecordsMap[mapKey] = []
-					plateNoParkingRecordsMap[mapKey].push(record)
-				} else {
-					parkingRecords.push(record)
-				}
-			})
+// 				if (parkingRecords === undefined) {
+// 					plateNoParkingRecordsMap[mapKey] = []
+// 					plateNoParkingRecordsMap[mapKey].push(record)
+// 				} else {
+// 					parkingRecords.push(record)
+// 				}
+// 			})
 
-			return callback(null, plateNoParkingRecordsMap)
-		}, 
-		(plateNoParkingRecordsMap, callback) => {
-			let combinedRecords = []
+// 			return callback(null, plateNoParkingRecordsMap)
+// 		}, 
+// 		(plateNoParkingRecordsMap, callback) => {
+// 			let combinedRecords = []
 
-			const startDate = moment(start).format('YYYY-MM-DD')
-			const endMoment = moment(startDate + ' ' + moment(end).format('HH:mm:ss'))
-			const startMoment = moment(start)
+// 			const startDate = moment(start).format('YYYY-MM-DD')
+// 			const endMoment = moment(startDate + ' ' + moment(end).format('HH:mm:ss'))
+// 			const startMoment = moment(start)
 
-			const totalDuration = endMoment.diff(startMoment, 'minutes')
+// 			const totalDuration = endMoment.diff(startMoment, 'minutes')
 
-			for (let key in plateNoParkingRecordsMap) {
-				let records = plateNoParkingRecordsMap[key]
+// 			for (let key in plateNoParkingRecordsMap) {
+// 				let records = plateNoParkingRecordsMap[key]
 
-				let recordsLength = records.length
+// 				let recordsLength = records.length
 
-				if (recordsLength === 1) {
-					combinedRecords.push(Object.assign({}, records[0], {
-						available: totalDuration - records[0].parkingduration,
-						percentage: (((totalDuration - records[0].parkingduration) / totalDuration) * 100).toFixed(2) + '%'
-					}))
+// 				if (recordsLength === 1) {
+// 					combinedRecords.push(Object.assign({}, records[0], {
+// 						available: totalDuration - records[0].parkingduration,
+// 						percentage: (((totalDuration - records[0].parkingduration) / totalDuration) * 100).toFixed(2) + '%'
+// 					}))
 
-					continue
-				}
+// 					continue
+// 				}
 
-				let theSumOfDuration = 0
+// 				let theSumOfDuration = 0
 
-				for (let i = 0; i < records.length; ++i) {
-					let record = records[i]
-					let duration = record.parkingduration
+// 				for (let i = 0; i < records.length; ++i) {
+// 					let record = records[i]
+// 					let duration = record.parkingduration
 					
-					if (duration === totalDuration) {
-						combinedRecords.push(Object.assign({}, record, {
-							available: 0,
-							percentage: '0%'
-						}))
-						break
-					}
+// 					if (duration === totalDuration) {
+// 						combinedRecords.push(Object.assign({}, record, {
+// 							available: 0,
+// 							percentage: '0%'
+// 						}))
+// 						break
+// 					}
 
-					theSumOfDuration += duration
-				}
+// 					theSumOfDuration += duration
+// 				}
 
-				combinedRecords.push(Object.assign({}, records[0], {
-					available: totalDuration - theSumOfDuration,
-					percentage: (((totalDuration - theSumOfDuration) / totalDuration) * 100).toFixed(2) + '%'
-				}))
+// 				combinedRecords.push(Object.assign({}, records[0], {
+// 					available: totalDuration - theSumOfDuration,
+// 					percentage: (((totalDuration - theSumOfDuration) / totalDuration) * 100).toFixed(2) + '%'
+// 				}))
 
-				return callback(null, combinedRecords)
-			}
-		}
-	], (error, result) => {
-		if (error) return callback(error)
-		return callback(null, result)
-	})
-}
+// 				return callback(null, combinedRecords)
+// 			}
+// 		}
+// 	], (error, result) => {
+// 		if (error) return callback(error)
+// 		return callback(null, result)
+// 	})
+// }
 
 exports.getAvailablePercentage = async (start, end, interval, parking, callback) => {
 	const sampleDate = '2019-01-01'
@@ -337,12 +341,40 @@ exports.getAvailablePercentage = async (start, end, interval, parking, callback)
 				nextTime = endTime
 			}
 
+			//for循环中执行sql语句效率低，需要调整优化
 			let num = await TOTAL_SPLIT.getByStartEndDateParkingAsync(frontTime, nextTime, currentDate, parking)
+			
 			counts.push(num[0].num)
 
-			console.log(currentDate, frontTime + '-' + nextTime, num[0].num)
+			// console.log(currentDate, frontTime + '-' + nextTime, num[0].num)	
 		}
 	}
-	// console.log(counts)
+
 	return callback(counts)
+}
+
+exports.getAvailablePercentageByES = async (startDate, endDate, startTime, endTime, parking, callback) => {
+	const sampleDate = '2019-01-01'
+
+	const totalDate = moment(endDate + ' 00:00:00').diff(moment(startDate + ' 00:00:00'), 'd')
+	const totalTime = moment(sampleDate + ' ' + endTime).diff(moment(sampleDate + ' ' + startTime), 'm')
+
+	let dates = []
+	let datas = []
+
+	for (let i = 0; i < totalDate; ++i) {
+		let currentDate = moment(startDate + ' 00:00:00').add(i, 'd').format('YYYY-MM-DD')
+
+		for (let j = 0; j < totalTime; ++j) {
+			let frontTime = moment(moment(currentDate + ' ' + startTime).add(j, 'm')).format('HH:mm:ss')
+			let nextTime = moment(moment(currentDate + ' ' + startTime).add(j + 1, 'm')).format('HH:mm:ss')
+
+			let result = await PARKING_RECORDS.getParkingCount(currentDate, frontTime, nextTime, parking)
+
+			dates.push(currentDate + ' ' + frontTime)
+			datas.push(result.body.count)
+		}
+	}
+
+	return callback(dates, datas)
 }
