@@ -1,10 +1,11 @@
 const fs = require('fs')
 const moment = require('moment')
-// const async = require('async')
+const async = require('async')
 const TX_ORG = require('../model/tx_org.model')
 const TOTAL = require('../model/total.model')
 const TOTAL_SPLIT = require('../model/total_split.model')
 const PARKING_RECORDS = require('../index/parking_records.index')
+const TOTAL_DURATION = require('../model/total_duration.model')
 
 exports.handleOrgData = (fileName, callback) => {
 	TX_ORG.get(fileName, (error, records) => {
@@ -17,29 +18,29 @@ exports.handleOrgData = (fileName, callback) => {
 
 		jsonRecord.forEach(record => {
 			let plateNo = record.plateno
-			let carType = record.cartype
 			let owner = record.owner
 			let enterOrExitTime = moment(record.enterorexittime).format('YYYY-M-D HH:mm:ss')
 			let enterOrExit = record.enterorexit
+			let parking = record.parking
 
 			if (platenoMap[plateNo] === undefined) {
 				if (enterOrExit === '进') {
 					inAndOutRecord.push({
 						plateno: plateNo,
-						cartype: carType,
 						owner,
 						entertime: enterOrExitTime,
 						exittime: '',
-						enterorexit: enterOrExit
+						enterorexit: enterOrExit,
+						parking
 					})
 				} else {
 					inAndOutRecord.push({
 						plateno: plateNo,
-						cartype: carType,
 						owner,
 						entertime: '',
 						exittime: enterOrExitTime,
-						enterorexit: enterOrExit
+						enterorexit: enterOrExit,
+						parking
 					})
 				}
 
@@ -53,45 +54,44 @@ exports.handleOrgData = (fileName, callback) => {
 				} else if (lastInOrOut === '出' && enterOrExit === '进') {
 					inAndOutRecord.push({
 						plateno: plateNo,
-						cartype: carType,
 						owner,
 						entertime: enterOrExitTime,
 						exittime: '',
-						enterorexit: enterOrExit
+						enterorexit: enterOrExit,
+						parking
 					})
 				} else if (lastInOrOut === '进' && enterOrExit === '进') {
 					inAndOutRecord.push({
 						plateno: plateNo,
-						cartype: carType,
 						owner,
 						entertime: enterOrExitTime,
 						exittime: '',
-						enterorexit: enterOrExit
+						enterorexit: enterOrExit,
+						parking
 					})
 				} else if (lastInOrOut === '出' && enterOrExit === '出') {
 					inAndOutRecord.push({
 						plateno: plateNo,
-						cartype: carType,
 						owner,
 						entertime: '',
 						exittime: enterOrExitTime,
-						enterorexit: enterOrExit
+						enterorexit: enterOrExit,
+						parking
 					})
 				}
 			}
 		})
 
-		let output = 'plateno,cartype,owner,entertime,exittime,parking\n'
+		let output = 'plateno,owner,entertime,exittime,parking\n'
 
 		inAndOutRecord.forEach(record => {
 			let plateNo = record.plateno
-			let carType = record.cartype
 			let owner = record.owner
 			let enterTime = record.entertime
 			let exitTime = record.exittime
-			let parking = fileName
+			let parking = record.parking
 
-			output += plateNo + ',' + carType + ',' + owner + ',' + enterTime + ',' + exitTime + ',' + parking + '\n'
+			output += plateNo + ',' + owner + ',' + enterTime + ',' + exitTime + ',' + parking + '\n'
 		})
 
 		fs.writeFile(`d:/github/data_handler/dist/${fileName}.csv`, output, error => {
@@ -114,8 +114,8 @@ exports.splitRecords = callback => {
 			let diff = record.diff
 
 			if (diff === 0) {
-				record.entertime = moment(record.entertime).format()
-				record.exittime = moment(record.exittime).format()
+				record.entertime = moment(record.entertime).format('YYYY-MM-DD HH:mm:ss')
+				record.exittime = moment(record.exittime).format('YYYY-MM-DD HH:mm:ss')
 				splitedRecords.push(record)
 			} else {
 				const dateFormat = 'YYYY-MM-DD'
@@ -131,18 +131,18 @@ exports.splitRecords = callback => {
 				for (let i = 0; i < diff + 1; ++i) {
 					if (i === 0) {
 						newRecord = Object.assign({}, record, {
-							entertime: moment(enterTime).format(),
-							exittime: moment(enterDate + ' 23:59:59').format()
+							entertime: moment(enterTime).format('YYYY-MM-DD HH:mm:ss'),
+							exittime: moment(enterDate + ' 23:59:59').format('YYYY-MM-DD HH:mm:ss')
 						})
 					} else if (i === diff) {
 						newRecord = Object.assign({}, record, {
-							entertime: moment(exitDate + ' 00:00:00').format(),
-							exittime: moment(exitTime).format()
+							entertime: moment(exitDate + ' 00:00:00').format('YYYY-MM-DD HH:mm:ss'),
+							exittime: moment(exitTime).format('YYYY-MM-DD HH:mm:ss')
 						})
 					} else {
 						newRecord = Object.assign({}, record, {
-							entertime: moment(moment(enterTime).add(i, 'd').format(dateFormat) + ' 00:00:00').format(),
-							exittime: moment(moment(enterTime).add(i, 'd').format(dateFormat) + ' 23:59:59').format()
+							entertime: moment(moment(enterTime).add(i, 'd').format(dateFormat) + ' 00:00:00').format('YYYY-MM-DD HH:mm:ss'),
+							exittime: moment(moment(enterTime).add(i, 'd').format(dateFormat) + ' 23:59:59').format('YYYY-MM-DD HH:mm:ss')
 						})
 					}
 
@@ -212,16 +212,16 @@ const calcParkingDurationInterval = (start, end, records) => {
 
 		let parkingDuration = 0
 
-		if (exitMoment.isSameOrBefore(startMoment) || enterMoment.isSameOrAfter(endMoment)) {
+		if (exitMoment.isSameOrBefore(startMoment) || enterMoment.isSameOrAfter(endMoment)) { // 1、2
 			parkingDuration = 0
-		} else if (enterMoment.isSameOrBefore(startMoment) && exitMoment.isSameOrAfter(endMoment)) {
+		} else if (enterMoment.isSameOrBefore(startMoment) && exitMoment.isSameOrAfter(endMoment)) { // 6
 			parkingDuration = endMoment.diff(startMoment, 'minutes')
-		} else if (enterMoment.isSameOrBefore(startMoment) && (startMoment.isSameOrBefore(exitMoment) && endMoment.isSameOrAfter(exitMoment))) {
+		} else if (enterMoment.isSameOrBefore(startMoment) && (exitMoment.isSameOrBefore(endMoment) && exitMoment.isSameOrAfter(startMoment))) { // 3
 			parkingDuration = exitMoment.diff(startMoment, 'minutes')
-		} else if (enterMoment.isSameOrAfter(startMoment) && exitMoment.isSameOrBefore(endMoment)) {
+		} else if (enterMoment.isSameOrAfter(startMoment) && exitMoment.isSameOrBefore(endMoment)) { // 4
 			parkingDuration = exitMoment.diff(enterMoment, 'minutes')
-		} else {
-			parkingDuration = endMoment.diff(startMoment, 'minutes')
+		} else { // 5
+			parkingDuration = endMoment.diff(enterMoment, 'minutes')
 		}
 
 		record.parkingduration = parkingDuration
@@ -230,94 +230,106 @@ const calcParkingDurationInterval = (start, end, records) => {
 	return [...records]
 }
 
-// exports.getFreeParkingDuration = (start, end, callback) => {
-// 	async.waterfall([
-// 		callback => {
-// 			TOTAL_SPLIT.get(start, end, (error, records) => {
-// 				if (error) return callback(error)
+exports.getFreeParkingDuration = (start, end, callback) => {
+	async.waterfall([
+		callback => {
+			TOTAL_SPLIT.get(start, end, (error, records) => {
+				if (error) return callback(error)
 
-// 				let splitedRecords = JSON.parse(JSON.stringify(records))
+				let splitedRecords = JSON.parse(JSON.stringify(records))
 
-// 				return callback(null, splitedRecords)
-// 			})
-// 		},
-// 		(splitedRecords, callback) => {
-// 			let rdsWithPkgDurt = calcParkingDurationInterval(start, end, splitedRecords)
-// 			callback(null, rdsWithPkgDurt)
-// 		},
-// 		(rdsWithPkgDurt, callback) => {
-// 			let plateNoParkingRecordsMap = {}
+				return callback(null, splitedRecords)
+			})
+		},
+		(splitedRecords, callback) => {
+			let rdsWithPkgDurt = calcParkingDurationInterval(start, end, splitedRecords)
+			callback(null, rdsWithPkgDurt)
+		},
+		(rdsWithPkgDurt, callback) => {
+			let plateNoParkingRecordsMap = {}
 
-// 			rdsWithPkgDurt.forEach(record => {
-// 				let plateNo = record.plateno
-// 				let enterDate = moment(record.entertime).format('YYYY-MM-DD')
-// 				let mapKey = plateNo + '_' + enterDate
+			rdsWithPkgDurt.forEach(record => {
+				let plateNo = record.plateno
+				let enterDate = moment(record.entertime).format('YYYY-MM-DD')
+				let mapKey = plateNo + '_' + enterDate
 
-// 				let parkingRecords = plateNoParkingRecordsMap[mapKey]
+				let parkingRecords = plateNoParkingRecordsMap[mapKey]
 
-// 				if (parkingRecords === undefined) {
-// 					plateNoParkingRecordsMap[mapKey] = []
-// 					plateNoParkingRecordsMap[mapKey].push(record)
-// 				} else {
-// 					parkingRecords.push(record)
-// 				}
-// 			})
+				if (parkingRecords === undefined) {
+					plateNoParkingRecordsMap[mapKey] = []
+					plateNoParkingRecordsMap[mapKey].push(record)
+				} else {
+					parkingRecords.push(record)
+				}
+			})
 
-// 			return callback(null, plateNoParkingRecordsMap)
-// 		}, 
-// 		(plateNoParkingRecordsMap, callback) => {
-// 			let combinedRecords = []
+			return callback(null, plateNoParkingRecordsMap)
+		}, 
+		(plateNoParkingRecordsMap, callback) => {	
+			let combinedRecords = []
 
-// 			const startDate = moment(start).format('YYYY-MM-DD')
-// 			const endMoment = moment(startDate + ' ' + moment(end).format('HH:mm:ss'))
-// 			const startMoment = moment(start)
+			const startDate = moment(start).format('YYYY-MM-DD')
+			const endMoment = moment(startDate + ' ' + moment(end).format('HH:mm:ss'))
+			const startMoment = moment(start)
 
-// 			const totalDuration = endMoment.diff(startMoment, 'minutes')
+			const totalDuration = endMoment.diff(startMoment, 'minutes')
 
-// 			for (let key in plateNoParkingRecordsMap) {
-// 				let records = plateNoParkingRecordsMap[key]
+			for (let key in plateNoParkingRecordsMap) {
+				let records = plateNoParkingRecordsMap[key]
 
-// 				let recordsLength = records.length
+				let recordsLength = records.length
 
-// 				if (recordsLength === 1) {
-// 					combinedRecords.push(Object.assign({}, records[0], {
-// 						available: totalDuration - records[0].parkingduration,
-// 						percentage: (((totalDuration - records[0].parkingduration) / totalDuration) * 100).toFixed(2) + '%'
-// 					}))
+				if (recordsLength === 1) {
+					combinedRecords.push(Object.assign({}, records[0], {
+						available: totalDuration - records[0].parkingduration,
+						percentage: parseFloat((((totalDuration - records[0].parkingduration) / totalDuration) * 100).toFixed(2))
+					}))
 
-// 					continue
-// 				}
+					continue
+				} 
 
-// 				let theSumOfDuration = 0
+				let theSumOfDuration = 0
 
-// 				for (let i = 0; i < records.length; ++i) {
-// 					let record = records[i]
-// 					let duration = record.parkingduration
-					
-// 					if (duration === totalDuration) {
-// 						combinedRecords.push(Object.assign({}, record, {
-// 							available: 0,
-// 							percentage: '0%'
-// 						}))
-// 						break
-// 					}
+				for (let i = 0; i < records.length; ++i) {
+					let record = records[i]
+					let duration = record.parkingduration
 
-// 					theSumOfDuration += duration
-// 				}
+					if (duration === totalDuration) {
+						combinedRecords.push(Object.assign({}, record, {
+							available: 0,
+							percentage: 0
+						}))
+						break
+					}
 
-// 				combinedRecords.push(Object.assign({}, records[0], {
-// 					available: totalDuration - theSumOfDuration,
-// 					percentage: (((totalDuration - theSumOfDuration) / totalDuration) * 100).toFixed(2) + '%'
-// 				}))
+					theSumOfDuration += duration
+				}
 
-// 				return callback(null, combinedRecords)
-// 			}
-// 		}
-// 	], (error, result) => {
-// 		if (error) return callback(error)
-// 		return callback(null, result)
-// 	})
-// }
+				combinedRecords.push(Object.assign({}, records[0], {
+					parkingduration: theSumOfDuration,
+					available: totalDuration - theSumOfDuration,
+					percentage: parseFloat((((totalDuration - theSumOfDuration) / totalDuration) * 100).toFixed(2))
+				}))	
+			}
+
+			return callback(null, combinedRecords)
+		}
+	], (error, result) => {
+		if (error) return callback(error, null)
+
+		let output = 'plateno,owner,entertime,exittime,parking,parkingduration,available,percentage\n'
+
+		result.forEach(item => {
+			output += item.plateno + ',' + item.owner + ',' + item.entertime + ',' + item.exittime + ',' + item.parking + ',' + item.parkingduration + ',' + item.available + ',' + item.percentage + '\n'
+		})
+
+		fs.writeFile('d:/github/data_handler/dist/final.csv', output, error => {
+			if (error) return callback(error, null)
+
+			return callback(null, 1)
+		})	
+	})
+}
 
 exports.getAvailablePercentage = async (start, end, interval, parking, callback) => {
 	const sampleDate = '2019-01-01'
@@ -327,13 +339,13 @@ exports.getAvailablePercentage = async (start, end, interval, parking, callback)
 
 	const totalDate = moment(end).diff(moment(start), 'd')
 	const totalTime = moment(sampleDate + ' ' + endTime).diff(moment(sampleDate + ' ' + startTime), 'm')
-// console.log(totalDate, totalTime)
+
 	let counts = []
 	for (let i = 0; i <= totalDate; ++i) {
 		let currentDate = moment(start).add(i, 'd').format('YYYY-MM-DD')
 
 		for (let j = 0; j < totalTime / interval; ++j) {
-			// console.log(totalTime / interval, j)
+
 			let frontTime = moment(moment(currentDate + ' ' + startTime).add(j * interval, 'm')).format('HH:mm:ss')
 			let nextTime = moment(moment(currentDate + ' ' + startTime).add((j + 1) * interval, 'm')).format('HH:mm:ss')
 
@@ -373,6 +385,7 @@ exports.getAvailablePercentageByES = async (startDate, endDate, startTime, endTi
 
 			dates.push(currentDate + ' ' + frontTime)
 			datas.push(result.body.count)
+			console.log(currentDate + ' ' + frontTime, result.body.count)
 		}
 	}
 

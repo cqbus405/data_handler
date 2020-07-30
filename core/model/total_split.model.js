@@ -14,13 +14,13 @@ exports.get = (start, end, callback) => {
 						+ "	) AS exittime, "
 						+ "	parking "
 						+ "FROM "
-						+ "	total_split "
-						+ "WHERE "
-						+ "	entertime >= '"
-						+ start + "' "
-						+ "AND exittime <= '"
+						+ "	total_split;"
+						// + "WHERE "
+						// + "	entertime >= '"
+						// + start + "' "
+						// + "AND exittime <= '"
 						// + end + "';"
-						+ end + "' LIMIT 1000;"
+						// + end + "' LIMIT 1000;"
 
 	mysql.connection.query(SQL, (error, results, fields) => {
 		if (error) return callback(error, null)
@@ -41,8 +41,6 @@ exports.getByStartEndDateParkingAsync = async (start, end, date, parking) => {
 						+ "	TIME(entertime) <= '" + start + "' "
 						+ "	AND TIME(exittime) >= '" + end + "' "
 						+ ");"
-// console.log(SQL)
 	var result = await mysql.querySync(SQL)
-	// console.log(result)
 	return JSON.parse(JSON.stringify(result))
 }

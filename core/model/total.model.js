@@ -7,7 +7,7 @@ exports.get = callback => {
 						+ "DATE_FORMAT(entertime, '%H:%i:%s') AS enter, DATE_FORMAT(exittime, '%H:%i:%s') AS `exit`, "
 						+ "parking, datediff(exittime, entertime) AS diff "
 						+ "FROM "
-						+ "total "
+						+ "total2 "
 						// + " WHERE plateno = '京N7SX72' AND DATE_FORMAT(entertime, '%Y-%m-%d') = '2019-08-05' "
 						+ "ORDER BY "
 						+ "plateno, "
