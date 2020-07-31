@@ -1,9 +1,10 @@
 {
 	"mysql": {
-		"host": "localhost",
+		"host": "172.168.10.21",
+		"port": 3306,
 		"user": "q",
 		"password": "cqgogogo",
-		"database": "parking",
+		"database": "parking2",
 		"multipleStatements": true
 	}
 }

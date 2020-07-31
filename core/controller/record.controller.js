@@ -1,7 +1,7 @@
 const moment = require('moment')
 const recordService = require('../service/record.service')
 
-exports.handleOrgData = (req, res) => {
+exports.combineRecord = (req, res) => {
 	let fileBaseName = req.query.filename
 
 	if (!fileBaseName) {
@@ -11,7 +11,7 @@ exports.handleOrgData = (req, res) => {
 		})
 	}
 
-	recordService.handleOrgData(fileBaseName, (error, result) => {
+	recordService.combineRecordServ(fileBaseName, (error, result) => {
 		if (error) {
 			return res.json({
 				errcode: 1,
@@ -117,13 +117,19 @@ exports.availablePercentageByES = async (req, res) => {
 	const endTime = req.query.endtime
 	const parking = req.query.parking
 
-	let counts = await recordService.getAvailablePercentageByES(startDate, endDate, startTime, endTime, parking, (dates, datas) => {
+	recordService.getParkingCountPerMin(startDate, endDate, startTime, endTime, parking, (error, dates, datas, total) => {
+		if (error) return res.json({
+			errcode: 1,
+			errmsg: error
+		})
+
 		return res.json({
 			errcode: 0,
 			errmsg: 'ok',
 			data: {
 				dates,
-				datas
+				datas,
+				total
 			}
 		})
 	})

@@ -43,7 +43,7 @@ $(document).ready(function() {
 
 		var echartsInstance = echarts.init(document.getElementById('main'));
 
-		var url = `http://localhost:3000/record/avlPacByES?startdate=${inputStartDateValue}&enddate=${inputEndDateValue}&starttime=${inputStartTimeValue}&endtime=${inputEndTimeValue}&parking=${parking}`;
+		var url = `http://183.66.213.82:5601/record/avlPacByES?startdate=${inputStartDateValue}&enddate=${inputEndDateValue}&starttime=${inputStartTimeValue}&endtime=${inputEndTimeValue}&parking=${parking}`;
 		
 		// console.log(url);
 
@@ -52,11 +52,13 @@ $(document).ready(function() {
 		$.ajax({
 			url,
 			dataType: "json",
+			timeout: 12000,
 			success: function(result) {
 				spinner.css("display", "none");
 
 				var datas = result.data.datas;
 				var dates = result.data.dates;
+				var total = result.data.total;
 
 				echartsInstance.setOption({
 					tooltip: {
@@ -97,7 +99,7 @@ $(document).ready(function() {
 			    }],
 			    series: [{
 			    	type: 'line',
-            name: '停车数量',
+            name: '车位占用量',
             smooth: true,
             symbol: 'none',
             sampling: 'average',
@@ -114,6 +116,13 @@ $(document).ready(function() {
               }])
             },
             data: datas
+			    },{
+			    	type: 'line',
+			    	name: '固定车位总量',
+			    	smooth: true,
+			    	symbol: 'none',
+            sampling: 'average',
+			    	data: total
 			    }]
 				})
 			}

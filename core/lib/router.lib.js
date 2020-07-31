@@ -2,7 +2,7 @@ const controller = require('./controller.lib')
 
 const setRouter = app => {
 	app.get('/', controller.home.homepage)
-	app.get('/record/handleOrgData', controller.record.handleOrgData)
+	app.get('/record/combine', controller.record.combineRecord)
 	app.get('/record/split', controller.record.splitRecords)
 	app.get('/record/duration', controller.record.calcParkingDuration)
 	app.get('/record/freeParkingDuration', controller.record.freeParkingDuration)

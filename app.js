@@ -20,6 +20,29 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+/**
+ * 跨域
+ */
+app.use(function (req, res, next) {
+  // Website you wish to allow to connect
+  res.set('Access-Control-Allow-Origin', '*');
+
+  // Request methods you wish to allow
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+  // Request headers you wish to allow
+  res.set('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers, Origin, X-Requested-With, \
+    Content-Type, Accept, WG-App-Version, WG-Device-Id, WG-Network-Type, WG-Vendor, WG-OS-Type, WG-OS-Version, \
+    WG-Device-Model, WG-CPU, WG-Sid, WG-App-Id, WG-Token');
+
+  // Set to true if you need the website to include cookies in the requests sent
+  // to the API (e.g. in case you use sessions)
+  res.set('Access-Control-Allow-Credentials', true);
+
+  // Pass to next layer of middleware
+  next();
+});
+
 setRouter(app)
 
 // catch 404 and forward to error handler

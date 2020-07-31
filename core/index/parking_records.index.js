@@ -30,7 +30,7 @@ exports.getParkingCount = async (enterDate, frontTime, nextTime, parking) => {
 	    }
 	  }		
 	}
-console.log(JSON.stringify(body))
+
 	const result = await esClient.count({
 		index: 'parking_records',
 		body

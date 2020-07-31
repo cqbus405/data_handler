@@ -6,8 +6,9 @@ const TOTAL = require('../model/total.model')
 const TOTAL_SPLIT = require('../model/total_split.model')
 const PARKING_RECORDS = require('../index/parking_records.index')
 const TOTAL_DURATION = require('../model/total_duration.model')
+const ES = require('../model/es.model')
 
-exports.handleOrgData = (fileName, callback) => {
+exports.combineRecordServ = (fileName, callback) => {
 	TX_ORG.get(fileName, (error, records) => {
 		if (error) return callback(error)
 
@@ -94,7 +95,7 @@ exports.handleOrgData = (fileName, callback) => {
 			output += plateNo + ',' + owner + ',' + enterTime + ',' + exitTime + ',' + parking + '\n'
 		})
 
-		fs.writeFile(`d:/github/data_handler/dist/${fileName}.csv`, output, error => {
+		fs.writeFile(`d:/github/data_handler/dist/${fileName}_combine.csv`, output, error => {
 			if (error) return callback(error, null)
 
 			return callback(null, 1)
@@ -374,6 +375,8 @@ exports.getAvailablePercentageByES = async (startDate, endDate, startTime, endTi
 	let dates = []
 	let datas = []
 
+	let output = 'date,time,count\n'
+let n = 0
 	for (let i = 0; i < totalDate; ++i) {
 		let currentDate = moment(startDate + ' 00:00:00').add(i, 'd').format('YYYY-MM-DD')
 
@@ -385,9 +388,56 @@ exports.getAvailablePercentageByES = async (startDate, endDate, startTime, endTi
 
 			dates.push(currentDate + ' ' + frontTime)
 			datas.push(result.body.count)
-			console.log(currentDate + ' ' + frontTime, result.body.count)
+			// console.log(currentDate + ' ' + frontTime, result.body.count)
+			
+			output += currentDate + ',' + frontTime + ',' + result.body.count + '\n'
+n += 1
+console.log(n)
 		}
 	}
 
-	return callback(dates, datas)
+	fs.writeFile('d:/github/data_handler/dist/' + parking + '_es.csv', output, error => {
+		if (error) return callback(error, null)
+
+		return callback(dates, datas)
+	})	
+}
+
+exports.getParkingCountPerMin = (startDate, endDate, startTime, endTime, parking, callback) => {
+	ES.get(startDate, endDate, startTime, endTime, parking, (error, results) => {
+		if (error) return callback(error, null)
+
+		let jsonResults = JSON.parse(JSON.stringify(results))
+
+		let dates = []
+		let datas = []
+		let total = []
+
+		let totalCount
+
+		switch (parking) {
+			case 'ljxj':
+				totalCount = 249;
+				break;
+
+			case 'tx':
+			 	totalCount = 1228;
+			 	break;
+
+			case 'yxgc':
+				totalCount = 645;
+				break;
+
+			default:
+				totalCount = 0;
+		}
+
+		jsonResults.forEach(item => {
+			dates.push(item.date + ' ' + item.time)
+			datas.push(item.count)
+			total.push(totalCount)
+		})
+
+		return callback(null, dates, datas, total)
+	})
 }
