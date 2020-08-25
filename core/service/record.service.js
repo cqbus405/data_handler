@@ -6,7 +6,7 @@ const TOTAL = require('../model/total.model')
 const TOTAL_SPLIT = require('../model/total_split.model')
 const PARKING_RECORDS = require('../index/parking_records.index')
 const TOTAL_DURATION = require('../model/total_duration.model')
-const ES = require('../model/es.model')
+const ES_RECORDS = require('../model/es_records.model')
 
 exports.combineRecordServ = (fileName, callback) => {
 	TX_ORG.get(fileName, (error, records) => {
@@ -375,8 +375,8 @@ exports.getAvailablePercentageByES = async (startDate, endDate, startTime, endTi
 	let dates = []
 	let datas = []
 
-	let output = 'date,time,count\n'
-let n = 0
+	let output = 'date,time,count,parking\n'
+
 	for (let i = 0; i < totalDate; ++i) {
 		let currentDate = moment(startDate + ' 00:00:00').add(i, 'd').format('YYYY-MM-DD')
 
@@ -388,11 +388,8 @@ let n = 0
 
 			dates.push(currentDate + ' ' + frontTime)
 			datas.push(result.body.count)
-			// console.log(currentDate + ' ' + frontTime, result.body.count)
 			
-			output += currentDate + ',' + frontTime + ',' + result.body.count + '\n'
-n += 1
-console.log(n)
+			output += currentDate + ',' + frontTime + ',' + result.body.count + ',' + parking + '\n'
 		}
 	}
 
@@ -403,8 +400,8 @@ console.log(n)
 	})	
 }
 
-exports.getParkingCountPerMin = (startDate, endDate, startTime, endTime, parking, callback) => {
-	ES.get(startDate, endDate, startTime, endTime, parking, (error, results) => {
+exports.getParkingCountPerMin = (parking, callback) => {
+	ES_RECORDS.get(parking, (error, results) => {
 		if (error) return callback(error, null)
 
 		let jsonResults = JSON.parse(JSON.stringify(results))
@@ -413,29 +410,10 @@ exports.getParkingCountPerMin = (startDate, endDate, startTime, endTime, parking
 		let datas = []
 		let total = []
 
-		let totalCount
-
-		switch (parking) {
-			case 'ljxj':
-				totalCount = 249;
-				break;
-
-			case 'tx':
-			 	totalCount = 1228;
-			 	break;
-
-			case 'yxgc':
-				totalCount = 645;
-				break;
-
-			default:
-				totalCount = 0;
-		}
-
 		jsonResults.forEach(item => {
 			dates.push(item.date + ' ' + item.time)
 			datas.push(item.count)
-			total.push(totalCount)
+			total.push(item.property)
 		})
 
 		return callback(null, dates, datas, total)

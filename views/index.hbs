@@ -5,13 +5,13 @@
 	<select id="select-parking">
 		<option value ="usage_type" disabled selected>请选择</option>
 		{{#each parkings}}
-			<option value={{parkingCode}}>{{parkingName}}</option>
+			<option value={{pkcode}}>{{pkname}}</option>
 		{{/each}}
 	</select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<label>开始日期：</label><input id="input-start-date" type="date" name="start_date" value="" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{{!-- 	<label>开始日期：</label><input id="input-start-date" type="date" name="start_date" value="" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 	<label>结束日期：</label><input id="input-end-date" type="date" name="end_date" value="" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 	<label>开始时间：</label><input id="input-start-time" type="time" name="start_time" value="" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<label>结束时间：</label><input id="input-end-time" type="time" name="end_time" value="" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<label>结束时间：</label><input id="input-end-time" type="time" name="end_time" value="" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --}}
 	<input id="button-search" type="button" value="查询" />
 </div>
 <div id="spinner" class="spinner-border" role="status" style="display: none; position: absolute; top: 50%; left: 50%;">

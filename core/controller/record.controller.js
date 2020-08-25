@@ -111,13 +111,13 @@ exports.availablePercentage = async (req, res) => {
 }
 
 exports.availablePercentageByES = async (req, res) => {
-	const startDate = req.query.startdate
-	const endDate = req.query.enddate
-	const startTime = req.query.starttime
-	const endTime = req.query.endtime
+	// const startDate = req.query.startdate
+	// const endDate = req.query.enddate
+	// const startTime = req.query.starttime
+	// const endTime = req.query.endtime
 	const parking = req.query.parking
 
-	recordService.getParkingCountPerMin(startDate, endDate, startTime, endTime, parking, (error, dates, datas, total) => {
+	recordService.getParkingCountPerMin(parking, (error, dates, datas, total) => {
 		if (error) return res.json({
 			errcode: 1,
 			errmsg: error

@@ -1,37 +1,37 @@
 $(document).ready(function() {
 	var parkingOption = $("#select-parking");
-	var inputStartDate = $("#input-start-date");
-	var inputEndDate = $("#input-end-date");
-	var inputStartTime = $("#input-start-time");
-	var inputEndTime = $("#input-end-time");
+	// var inputStartDate = $("#input-start-date");
+	// var inputEndDate = $("#input-end-date");
+	// var inputStartTime = $("#input-start-time");
+	// var inputEndTime = $("#input-end-time");
 	var buttonSearch = $("#button-search");
 
 	var spinner = $("#spinner");
 
 	buttonSearch.click(function() {
 		parking = parkingOption.val();
-		inputStartDateValue = inputStartDate.val();
-		inputEndDateValue = inputEndDate.val();
-		inputStartTimeValue = inputStartTime.val();
-		inputEndTimeValue = inputEndTime.val();
+		// inputStartDateValue = inputStartDate.val();
+		// inputEndDateValue = inputEndDate.val();
+		// inputStartTimeValue = inputStartTime.val();
+		// inputEndTimeValue = inputEndTime.val();
 
-		if (!inputStartDateValue || !inputEndDateValue || !inputStartTimeValue || !inputEndTimeValue) {
-			alert("日期和时间必填");
-			return;
-		}
+		// if (!inputStartDateValue || !inputEndDateValue || !inputStartTimeValue || !inputEndTimeValue) {
+		// 	alert("日期和时间必填");
+		// 	return;
+		// }
 
-		inputStartTimeValue += ":00";
-		inputEndTimeValue += ":00";
+		// inputStartTimeValue += ":00";
+		// inputEndTimeValue += ":00";
 
-		if (!checkDate(inputStartDateValue, inputEndDateValue)) {
-			alert("结束日期不能小于开始日期");
-			return;
-		}
+		// if (!checkDate(inputStartDateValue, inputEndDateValue)) {
+		// 	alert("结束日期不能小于开始日期");
+		// 	return;
+		// }
 
-		if (!checkTime(inputStartTimeValue, inputEndTimeValue)) {
-			alert("结束时间必须大于开始时间");
-			return;
-		}
+		// if (!checkTime(inputStartTimeValue, inputEndTimeValue)) {
+		// 	alert("结束时间必须大于开始时间");
+		// 	return;
+		// }
 
 		// console.log({
 		// 	parking,
@@ -43,7 +43,7 @@ $(document).ready(function() {
 
 		var echartsInstance = echarts.init(document.getElementById('main'));
 
-		var url = `http://183.66.213.82:5601/record/avlPacByES?startdate=${inputStartDateValue}&enddate=${inputEndDateValue}&starttime=${inputStartTimeValue}&endtime=${inputEndTimeValue}&parking=${parking}`;
+		var url = `http://172.168.10.21:3000/record/avlPacByES?parking=${parking}`;
 		
 		// console.log(url);
 
@@ -130,34 +130,34 @@ $(document).ready(function() {
 	});
 });
 
-function checkDate(inputStartDateValue, inputEndDateValue) {
-	var startDate = new Date(inputStartDateValue.replace("-", "/").replace("-", "/"));
-	var endDate = new Date(inputEndDateValue.replace("-", "/").replace("-", "/"));
-	if (endDate < startDate) {
-		return false;
-	}
-	return true;
-}
+// function checkDate(inputStartDateValue, inputEndDateValue) {
+// 	var startDate = new Date(inputStartDateValue.replace("-", "/").replace("-", "/"));
+// 	var endDate = new Date(inputEndDateValue.replace("-", "/").replace("-", "/"));
+// 	if (endDate < startDate) {
+// 		return false;
+// 	}
+// 	return true;
+// }
 
-function checkTime(startTime, endTime) {
-  var starArr = startTime.split(':');
-	var endArr = endTime.split(':');
+// function checkTime(startTime, endTime) {
+//   var starArr = startTime.split(':');
+// 	var endArr = endTime.split(':');
 	 
-	if (starArr[0] > endArr[0]) {
-		return false;
-	}
+// 	if (starArr[0] > endArr[0]) {
+// 		return false;
+// 	}
 
-	if (starArr[0] == endArr[0]) {
-		if (starArr[1] > endArr[1]) {
-			return false;
-		}
+// 	if (starArr[0] == endArr[0]) {
+// 		if (starArr[1] > endArr[1]) {
+// 			return false;
+// 		}
 
-		if (starArr[1] == endArr[1]) {
-			if (starArr[2] >= endArr[2]) {
-				return false;
-			}
-		}
-	}
+// 		if (starArr[1] == endArr[1]) {
+// 			if (starArr[2] >= endArr[2]) {
+// 				return false;
+// 			}
+// 		}
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
