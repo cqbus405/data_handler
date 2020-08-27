@@ -43,7 +43,7 @@ $(document).ready(function() {
 
 		var echartsInstance = echarts.init(document.getElementById('main'));
 
-		var url = `http://172.168.10.21:3000/record/avlPacByES?parking=${parking}`;
+		var url = `http://183.66.213.82:3003/record/avlPacByES?parking=${parking}`;
 		
 		// console.log(url);
 
