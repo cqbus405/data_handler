@@ -33,14 +33,18 @@ var getAvlRange = groupedDatas => {
 			// console.log(record)
 			if (moment(enterTime, 'H:m:s').isSameOrBefore(moment(START, 'H:m:s')) && moment(exitTime, 'H:m:s').isSameOrBefore(moment(END, 'H:m:s'))) {	
 				var avlRange = moment(END, 'H:m:s').diff(moment(exitTime, 'H:m:s'), 'minutes')
+				avlRange = Math.ceil(avlRange / 60)
 				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + exitTime + ',' + END + ',' + avlRange + ',' + parking + '\n'
  			} else if (moment(enterTime, 'H:m:s').isAfter(moment(START, 'H:m:s')) && moment(exitTime, 'H:m:s').isBefore(moment(END, 'H:m:s'))) {
 				var frontAvlRange = moment(enterTime, 'H:m:s').diff(moment(START, 'H:m:s'), 'minutes')
 				var backAvlRange = moment(END, 'H:m:s').diff(moment(exitTime, 'H:m:s'), 'minutes')
+				frontAvlRange = Math.ceil(frontAvlRange / 60)
+				backAvlRange = Math.ceil(backAvlRange / 60)
 				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + START + ',' + enterTime + ',' + frontAvlRange + ',' + parking + '\n'
 				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + exitTime + ',' + END + ',' + backAvlRange + ',' + parking + '\n'
 			} else {
 				var avlRange = moment(enterTime, 'H:m:s').diff(moment(START, 'H:m:s'), 'minutes')
+				avlRange = Math.ceil(avlRange / 60)
 				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + START + ',' + enterTime + ',' + avlRange + ',' + parking + '\n'
 			}
 		} else if (lenOfRecords > 2) {
@@ -55,10 +59,13 @@ var getAvlRange = groupedDatas => {
 				if (i === 0) {
 					if (moment(frontRecord.entertime, 'H:m:s').isBefore(moment(START, 'H:m:s')) && moment(frontRecord.exittime, 'H:m:s').isSameOrAfter(moment(START, 'H:m:s'))) {
 						var avlRange = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')
+						avlRange = Math.ceil(avlRange / 60)
 						recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + avlRange + ',' + parking + '\n'
 					} else {
 						var frontAvlRange = moment(frontRecord.entertime, 'H:m:s').diff(moment(START, 'H:m:s'), 'minutes')
 						var backAvlRange = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')
+						frontAvlRange = Math.ceil(frontAvlRange / 60)
+						backAvlRange = Math.ceil(backAvlRange / 60)
 						recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + START + ',' + frontRecord.entertime + ',' + frontAvlRange + ',' + parking + '\n'
 						recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + backAvlRange + ',' + parking + '\n'
 					}
@@ -68,16 +75,20 @@ var getAvlRange = groupedDatas => {
 					if (moment(backRecord.exittime, 'H:m:s').isBefore(moment(END, 'H:m:S'))) {
 						var frontAvlRange = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')
 						var backAvlRange = moment(END, 'H:m:s').diff(moment(backRecord.exittime, 'H:m:s'), 'minutes')
+						frontAvlRange = Math.ceil(frontAvlRange / 60)
+						backAvlRange = Math.ceil(backAvlRange / 60)
 						recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + frontAvlRange + ',' + parking + '\n'
 						recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + backRecord.exittime + ',' + END + ',' + backAvlRange + ',' + parking + '\n'
 					} else {
 						var avlRange = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')
+						avlRange = Math.ceil(avlRange / 60)
 						recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + avlRange + ',' + parking + '\n'
 					}
 				} 
 
 				if (i > 0 && i < lenOfRecords - 2) {
 					var avlRange = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')		
+					avlRange = Math.ceil(avlRange / 60)
 					recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + avlRange + ',' + parking + '\n'
 				}
 			}
@@ -90,17 +101,33 @@ var getAvlRange = groupedDatas => {
 			var parking = frontRecord.parking
 
 			if (moment(frontRecord.entertime, 'H:m:s').isAfter(moment(START, 'H:m:s')) && moment(backRecord.exittime, 'H:m:s').isBefore(moment(END, 'H:m:s'))) {
-				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + START + ',' + frontRecord.entertime + ',' + moment(frontRecord.entertime, 'H:m:s').diff(moment(START, 'H:m:s'), 'minutes') + ',' + parking + '\n'
-				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes') + ',' + parking + '\n'
-				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + backRecord.exittime + ',' + END + ',' + moment(END, 'H:m:s').diff(moment(backRecord.exittime, 'H:m:s'), 'minutes') + ',' + parking + '\n'
-			} else if (moment(frontRecord.entertime, 'H:m:s').isAfter(moment(START, 'H:m:s')) && moment(backRecord.exittime, 'H:m:s').isAfter(moment(END, 'H:m:s'))) {	
-				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + START + ',' + frontRecord.entertime + ',' + moment(frontRecord.entertime, 'H:m:s').diff(moment(START, 'H:m:s'), 'minutes') + ',' + parking + '\n'
-				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes') + ',' + parking + '\n'			
+				var avlRange1 = moment(frontRecord.entertime, 'H:m:s').diff(moment(START, 'H:m:s'), 'minutes')
+				var avlRange2 = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')
+				var avlRange3 = moment(END, 'H:m:s').diff(moment(backRecord.exittime, 'H:m:s'), 'minutes')
+				avlRange1 = Math.ceil(avlRange1 / 60)
+				avlRange2 = Math.ceil(avlRange2 / 60)
+				avlRange3 = Math.ceil(avlRange3 / 60)
+				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + START + ',' + frontRecord.entertime + ',' + avlRange1 + ',' + parking + '\n'
+				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + avlRange2 + ',' + parking + '\n'
+				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + backRecord.exittime + ',' + END + ',' + avlRange3 + ',' + parking + '\n'
+			} else if (moment(frontRecord.entertime, 'H:m:s').isAfter(moment(START, 'H:m:s')) && moment(backRecord.exittime, 'H:m:s').isAfter(moment(END, 'H:m:s'))) {
+				var avlRange1 = moment(frontRecord.entertime, 'H:m:s').diff(moment(START, 'H:m:s'), 'minutes')
+				var avlRange2 = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')
+				avlRange1 = Math.ceil(avlRange1 / 60)
+				avlRange2 = Math.ceil(avlRange2 / 60)
+				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + START + ',' + frontRecord.entertime + ',' + avlRange1 + ',' + parking + '\n'
+				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + avlRange2 + ',' + parking + '\n'			
 			} else if (moment(frontRecord.entertime, 'H:m:s').isBefore(moment(START, 'H:m:s')) && moment(backRecord.exittime, 'H:m:s').isBefore(moment(END, 'H:m:s'))) {
-				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes') + ',' + parking + '\n'
-				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + backRecord.exittime + ',' + END + ',' + moment(END, 'H:m:s').diff(moment(backRecord.exittime, 'H:m:s'), 'minutes') + ',' + parking + '\n'														
+				var avlRange1 = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')
+				var avlRange2 = moment(END, 'H:m:s').diff(moment(backRecord.exittime, 'H:m:s'), 'minutes')
+				avlRange1 = Math.ceil(avlRange1 / 60)
+				avlRange2 = Math.ceil(avlRange2 / 60)
+				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + avlRange1 + ',' + parking + '\n'
+				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + backRecord.exittime + ',' + END + ',' + avlRange2 + ',' + parking + '\n'														
 			} else {
-				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes') + ',' + parking + '\n'								
+				var avlRange = moment(backRecord.entertime, 'H:m:s').diff(moment(frontRecord.exittime, 'H:m:s'), 'minutes')
+				avlRange = Math.ceil(avlRange / 60)
+				recordsWithAvlRangeCSV += plateNo + ',' + enterDate + ',' + frontRecord.exittime + ',' + backRecord.entertime + ',' + avlRange + ',' + parking + '\n'								
 			}
 		}
 	}
